@@ -12,56 +12,56 @@ import xgboost as xgb
 from sklearn.model_selection import GridSearchCV
 
 
-df= pd.read_csv("CARS.csv")
+df= pd.read_csv("car data.csv")
 
 missing_data = df.isnull().sum()
 if missing_data.sum() > 0:
     df = df.fillna(df.median())
     
-df['age'] = 2025 - df['year']
-df.drop('year',axis=1,inplace = True)
+df['age'] = 2025 - df['Year']
+df.drop('Year',axis=1,inplace = True)
 #print(df)
 
 #km plot
-# sns.set_style("darkgrid")
-# plt.figure(figsize=(10, 4))
-# # x axis km_driven
-# sns.scatterplot(x='km_driven', y='selling_price', data=df, hue="fuel", palette="coolwarm", edgecolor="black")
-# plt.xticks(rotation=45)
-# plt.xlabel("Kilometre (KM)")
-# plt.ylabel("Selling Price")
-# plt.title("Changing Selling Price According KM")
-# plt.show()
+sns.set_style("darkgrid")
+plt.figure(figsize=(10, 4))
+# x axis km_driven
+sns.scatterplot(x='Kms_Driven', y='Selling_Price', data=df, hue="Fuel_Type", palette="coolwarm", edgecolor="black")
+plt.xticks(rotation=45)
+plt.xlabel("Kilometre (KM)")
+plt.ylabel("Selling Price")
+plt.title("Changing Selling Price According KM")
+plt.show()
 
-# #age plot
-# mean_price_age=df.groupby("age")["selling_price"].mean().reset_index()
-# sns.set_style("darkgrid")
-# plt.figure(figsize=(10, 4))
-# sns.lineplot(x=mean_price_age['age'], y=mean_price_age['selling_price'], marker="o", color="b")
-# plt.xlabel("Age")
-# plt.ylabel("Mean Price")
-# plt.title("Mean Selling Price According Age")
-# plt.show()
+#age plot
+mean_price_age=df.groupby("age")["Selling_Price"].mean().reset_index()
+sns.set_style("darkgrid")
+plt.figure(figsize=(10, 4))
+sns.lineplot(x=mean_price_age['age'], y=mean_price_age['Selling_Price'], marker="o", color="b")
+plt.xlabel("Age")
+plt.ylabel("Mean Price")
+plt.title("Mean Selling Price According Age")
+plt.show()
 
-# mean_fuel_price = df.groupby("fuel")["selling_price"].mean().reset_index()
-# sns.set_style("darkgrid")
-# plt.figure(figsize=(10, 4))
-# sns.barplot(x=mean_fuel_price['fuel'], y=mean_fuel_price['selling_price'])
-# plt.xlabel("Fuel")
-# plt.ylabel("Mean Price")
-# plt.title("Mean Selling Price According Fuel")
-# plt.show()
+mean_fuel_price = df.groupby("Fuel_Type")["Selling_Price"].mean().reset_index()
+sns.set_style("darkgrid")
+plt.figure(figsize=(10, 4))
+sns.barplot(x=mean_fuel_price['Fuel_Type'], y=mean_fuel_price['Selling_Price'])
+plt.xlabel("Fuel")
+plt.ylabel("Mean Price")
+plt.title("Mean Selling Price According Fuel")
+plt.show()
 
 def outlierplot():
     plt.figure(figsize=(12, 6))
     # Selling Price Outliers
     plt.subplot(1, 3, 1)
-    sns.boxplot(y=df["selling_price"])
+    sns.boxplot(y=df["Selling_Price"])
     plt.title("Selling Price Outliers")
 
     # KM Driven Outliers
     plt.subplot(1, 3, 2)
-    sns.boxplot(y=df["km_driven"])
+    sns.boxplot(y=df["Kms_Driven"])
     plt.title("KM Driven Outliers")
 
     # Age Outliers
@@ -77,78 +77,70 @@ def remove_outlier(columns):
     third_qntl=columns.quantile(0.75)
     iqr=third_qntl-first_qntl
     lower_limit = first_qntl - 1.5 * iqr
-    columns = columns.clip(lower=lower_limit, upper=columns.quantile(0.99))
+    upper_limit=third_qntl+1.5*iqr
+    columns = columns.clip(lower=lower_limit, upper=columns.quantile(0.90))
     return columns
     
-#outlierplot()
-df["km_driven"] = remove_outlier(df["km_driven"])
+outlierplot()
+df["Kms_Driven"] = remove_outlier(df["Kms_Driven"])
 df["age"] = remove_outlier(df["age"])
-df["selling_price"] = remove_outlier(df["selling_price"])
-#outlierplot()
+df["Selling_Price"] = remove_outlier(df["Selling_Price"])
+outlierplot()
 
 scaler = MinMaxScaler(feature_range=(0, 1))
-df[['km_driven', 'age',"selling_price"]] = scaler.fit_transform(df[['km_driven', 'age',"selling_price"]])
+df[['Kms_Driven', 'age',"Selling_Price","Present_Price"]] = scaler.fit_transform(df[['Kms_Driven','age',"Selling_Price","Present_Price"]])
 
-#random forest
 le = LabelEncoder()
-df['owner'] = df['owner'].replace({
-    "First Owner": 1,
-    "Second Owner": 2,
-    "Third Owner": 3,
-    "Fourth & Above Owner": 4,
-    "Test Drive Car": 0
-}).infer_objects(copy=False)
+# df['owner'] = df['owner'].replace({
+#     "First Owner": 1,
+#     "Second Owner": 2,
+#     "Third Owner": 3,
+#     "Fourth & Above Owner": 4,
+#     "Test Drive Car": 0
+# }).infer_objects(copy=False)
 
 encoder = OneHotEncoder(sparse_output=False, drop='first')
-categorical_cols = ['fuel', 'seller_type', 'transmission']
+categorical_cols = ['Fuel_Type', 'Seller_Type', 'Transmission']
 encoded_cols = encoder.fit_transform(df[categorical_cols])
 encoded_feature_names = encoder.get_feature_names_out(categorical_cols)
 encoded_df = pd.DataFrame(encoded_cols, columns=encoded_feature_names)
 df = pd.concat([df.drop(columns=categorical_cols), encoded_df], axis=1)
 
-#print(df.head(60))
-# print(df.columns)
 
-x=df.drop(columns=["selling_price","name"])
-y=df["selling_price"]
+x=df.drop(columns=["Selling_Price","Car_Name"])
+y=df["Selling_Price"]
 
 
-x_train,x_test,y_train,y_test=train_test_split(x,y,test_size=0.2,random_state=1)
-# model = RandomForestRegressor(random_state=42, max_depth=35)
-# model.fit(x_train, y_train)
-# y_pred=model.predict(x_test)
-# mse = mean_squared_error(y_test, y_pred)
-# mae = mean_absolute_error(y_test, y_pred)
-# r2 = r2_score(y_test, y_pred)
+x_train,x_test,y_train,y_test=train_test_split(x,y,test_size=0.2)
 
-# print("Mean Squared Error (MSE):", mse)
-# print("Mean Absolute Error (MAE):", mae)
-# print("R2 Score:", r2)
 
+#random forest
 rf = RandomForestRegressor()
-
 param_grid = {
-    "n_estimators": list(range(500, 1000, 100)),
-    "max_depth": list(range(6, 12, 2)),  
+    "n_estimators": list(range(400, 1000, 100)),
+    "max_depth": list(range(5, 15, 2)),  
     "min_samples_split": [4, 6, 8], 
     "min_samples_leaf": [1,2,5,7],
     "max_features": ["log2", "sqrt", None]
 }
 
-rf_rs = RandomizedSearchCV(estimator=rf, param_distributions=param_grid, random_state=42)
+rf_rs = RandomizedSearchCV(estimator=rf, param_distributions=param_grid, n_iter=30, cv=10, verbose=2, random_state=42)
 rf_rs.fit(x_train, y_train)
 
-# En iyi parametreler
+# Best Parameters
 print("Best Parameters:", rf_rs.best_params_)
 
-# En iyi model ile tahmin yapma
 best_model = rf_rs.best_estimator_
-y_train_pred_best = best_model.predict(x_train)
 
-# Değerlendirme
-mse_best = mean_squared_error(y_train, y_train_pred_best)
-mae_best = mean_absolute_error(y_train, y_train_pred_best)
-r2_best = r2_score(y_train, y_train_pred_best)
+# y_train_pred_best = best_model.predict(x_train)
+# mse_best = mean_squared_error(y_train, y_train_pred_best)
+# mae_best = mean_absolute_error(y_train, y_train_pred_best)
+# r2_best = r2_score(y_train, y_train_pred_best)
+
+y_test_pred_best=best_model.predict(x_test)
+mse_best = mean_squared_error(y_test, y_test_pred_best)
+mae_best = mean_absolute_error(y_test, y_test_pred_best)
+r2_best = r2_score(y_test, y_test_pred_best)
 
 print("Best Model - Mean Squared Error (MSE):", mse_best)
 print("Best Model - Mean Absolute Error (MAE):", mae_best)
