@@ -9,7 +9,8 @@ from sklearn.preprocessing import OneHotEncoder
 from sklearn.preprocessing import MinMaxScaler
 import matplotlib.pyplot as plt
 import xgboost as xgb
-from sklearn.model_selection import GridSearchCV
+from sklearn.linear_model import LinearRegression
+
 
 
 df= pd.read_csv("car data.csv")
@@ -25,6 +26,7 @@ df.drop('Year',axis=1,inplace = True)
 #km plot
 sns.set_style("darkgrid")
 plt.figure(figsize=(10, 4))
+
 # x axis km_driven
 sns.scatterplot(x='Kms_Driven', y='Selling_Price', data=df, hue="Fuel_Type", palette="coolwarm", edgecolor="black")
 plt.xticks(rotation=45)
@@ -91,13 +93,6 @@ scaler = MinMaxScaler(feature_range=(0, 1))
 df[['Kms_Driven', 'age',"Selling_Price","Present_Price"]] = scaler.fit_transform(df[['Kms_Driven','age',"Selling_Price","Present_Price"]])
 
 le = LabelEncoder()
-# df['owner'] = df['owner'].replace({
-#     "First Owner": 1,
-#     "Second Owner": 2,
-#     "Third Owner": 3,
-#     "Fourth & Above Owner": 4,
-#     "Test Drive Car": 0
-# }).infer_objects(copy=False)
 
 encoder = OneHotEncoder(sparse_output=False, drop='first')
 categorical_cols = ['Fuel_Type', 'Seller_Type', 'Transmission']
@@ -106,42 +101,60 @@ encoded_feature_names = encoder.get_feature_names_out(categorical_cols)
 encoded_df = pd.DataFrame(encoded_cols, columns=encoded_feature_names)
 df = pd.concat([df.drop(columns=categorical_cols), encoded_df], axis=1)
 
-
+# set split
 x=df.drop(columns=["Selling_Price","Car_Name"])
 y=df["Selling_Price"]
-
-
 x_train,x_test,y_train,y_test=train_test_split(x,y,test_size=0.2)
 
+def random_forest():
+    rf = RandomForestRegressor()
+    param_grid = {
+        "n_estimators": list(range(400, 1000, 100)),
+        "max_depth": list(range(5, 15, 2)),  
+        "min_samples_split": [4, 6, 8], 
+        "min_samples_leaf": [1,2,5,7],
+        "max_features": ["log2", "sqrt", None]
+    }
+    rf_rs = RandomizedSearchCV(estimator=rf, param_distributions=param_grid, n_iter=30, cv=10, verbose=2, random_state=42)
+    rf_rs.fit(x_train, y_train)
 
-#random forest
-rf = RandomForestRegressor()
-param_grid = {
-    "n_estimators": list(range(400, 1000, 100)),
-    "max_depth": list(range(5, 15, 2)),  
-    "min_samples_split": [4, 6, 8], 
-    "min_samples_leaf": [1,2,5,7],
-    "max_features": ["log2", "sqrt", None]
-}
+    # Best Parameters
+    print("Best Parameters for:", rf_rs.best_params_)
+    return rf_rs.best_estimator_
 
-rf_rs = RandomizedSearchCV(estimator=rf, param_distributions=param_grid, n_iter=30, cv=10, verbose=2, random_state=42)
-rf_rs.fit(x_train, y_train)
-
-# Best Parameters
-print("Best Parameters:", rf_rs.best_params_)
-
-best_model = rf_rs.best_estimator_
-
-# y_train_pred_best = best_model.predict(x_train)
-# mse_best = mean_squared_error(y_train, y_train_pred_best)
-# mae_best = mean_absolute_error(y_train, y_train_pred_best)
-# r2_best = r2_score(y_train, y_train_pred_best)
-
-y_test_pred_best=best_model.predict(x_test)
-mse_best = mean_squared_error(y_test, y_test_pred_best)
-mae_best = mean_absolute_error(y_test, y_test_pred_best)
-r2_best = r2_score(y_test, y_test_pred_best)
-
-print("Best Model - Mean Squared Error (MSE):", mse_best)
-print("Best Model - Mean Absolute Error (MAE):", mae_best)
-print("Best Model - R2 Score:", r2_best)
+def linearRegression():
+    lr=LinearRegression()
+    lr.fit(x_train,y_train)
+    return lr
+        
+def evulatemodel(model):
+    y_train_pred_best = model.predict(x_train)
+    mse_best = mean_squared_error(y_train, y_train_pred_best)
+    mae_best = mean_absolute_error(y_train, y_train_pred_best)
+    r2_best = r2_score(y_train, y_train_pred_best)
+    
+    print("Train Model")
+    print("Best Model - Mean Squared Error (MSE):", mse_best)
+    print("Best Model - Mean Absolute Error (MAE):", mae_best)
+    print("Best Model - R2 Score:", r2_best)
+    
+    y_test_pred_best=model.predict(x_test)
+    mse_best = mean_squared_error(y_test, y_test_pred_best)
+    mae_best = mean_absolute_error(y_test, y_test_pred_best)
+    r2_best = r2_score(y_test, y_test_pred_best)
+    
+    print("Test Model")
+    print("Best Model - Mean Squared Error (MSE):", mse_best)
+    print("Best Model - Mean Absolute Error (MAE):", mae_best)
+    print("Best Model - R2 Score:", r2_best)
+    
+    
+def xgBoost():
+    xgb_model = xgb.XGBRegressor(objective='reg:squarederror', n_estimators=100, learning_rate=0.1)
+    xgb_model.fit(x_train,y_train)
+    return xgb_model
+    
+#lr_model = linearRegression()
+#rf_model=random_forest()
+xgb_model=xgBoost()
+evulatemodel(xgb_model)
