@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import seaborn as sns
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
-from sklearn.preprocessing import LabelEncoder, OneHotEncoder
+from sklearn.preprocessing import OneHotEncoder
 from sklearn.model_selection import RandomizedSearchCV, train_test_split
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.preprocessing import OneHotEncoder
@@ -10,49 +10,49 @@ from sklearn.preprocessing import MinMaxScaler
 import matplotlib.pyplot as plt
 import xgboost as xgb
 from sklearn.linear_model import LinearRegression
-
-
+from sklearn.svm import SVR
+import lightgbm as lgb
 
 df= pd.read_csv("car data.csv")
 
 missing_data = df.isnull().sum()
 if missing_data.sum() > 0:
     df = df.fillna(df.median())
-    
+
 df['age'] = 2025 - df['Year']
 df.drop('Year',axis=1,inplace = True)
 #print(df)
 
-#km plot
-sns.set_style("darkgrid")
-plt.figure(figsize=(10, 4))
+# #km plot
+# sns.set_style("darkgrid")
+# plt.figure(figsize=(10, 4))
 
-# x axis km_driven
-sns.scatterplot(x='Kms_Driven', y='Selling_Price', data=df, hue="Fuel_Type", palette="coolwarm", edgecolor="black")
-plt.xticks(rotation=45)
-plt.xlabel("Kilometre (KM)")
-plt.ylabel("Selling Price")
-plt.title("Changing Selling Price According KM")
-plt.show()
+# # x axis km_driven
+# sns.scatterplot(x='Kms_Driven', y='Selling_Price', data=df, hue="Fuel_Type", palette="coolwarm", edgecolor="black")
+# plt.xticks(rotation=45)
+# plt.xlabel("Kilometre (KM)")
+# plt.ylabel("Selling Price")
+# plt.title("Changing Selling Price According KM")
+# plt.show()
 
-#age plot
-mean_price_age=df.groupby("age")["Selling_Price"].mean().reset_index()
-sns.set_style("darkgrid")
-plt.figure(figsize=(10, 4))
-sns.lineplot(x=mean_price_age['age'], y=mean_price_age['Selling_Price'], marker="o", color="b")
-plt.xlabel("Age")
-plt.ylabel("Mean Price")
-plt.title("Mean Selling Price According Age")
-plt.show()
+# #age plot
+# mean_price_age=df.groupby("age")["Selling_Price"].mean().reset_index()
+# sns.set_style("darkgrid")
+# plt.figure(figsize=(10, 4))
+# sns.lineplot(x=mean_price_age['age'], y=mean_price_age['Selling_Price'], marker="o", color="b")
+# plt.xlabel("Age")
+# plt.ylabel("Mean Price")
+# plt.title("Mean Selling Price According Age")
+# plt.show()
 
-mean_fuel_price = df.groupby("Fuel_Type")["Selling_Price"].mean().reset_index()
-sns.set_style("darkgrid")
-plt.figure(figsize=(10, 4))
-sns.barplot(x=mean_fuel_price['Fuel_Type'], y=mean_fuel_price['Selling_Price'])
-plt.xlabel("Fuel")
-plt.ylabel("Mean Price")
-plt.title("Mean Selling Price According Fuel")
-plt.show()
+# mean_fuel_price = df.groupby("Fuel_Type")["Selling_Price"].mean().reset_index()
+# sns.set_style("darkgrid")
+# plt.figure(figsize=(10, 4))
+# sns.barplot(x=mean_fuel_price['Fuel_Type'], y=mean_fuel_price['Selling_Price'])
+# plt.xlabel("Fuel")
+# plt.ylabel("Mean Price")
+# plt.title("Mean Selling Price According Fuel")
+# plt.show()
 
 def outlierplot():
     plt.figure(figsize=(12, 6))
@@ -82,17 +82,17 @@ def remove_outlier(columns):
     upper_limit=third_qntl+1.5*iqr
     columns = columns.clip(lower=lower_limit, upper=columns.quantile(0.90))
     return columns
-    
-outlierplot()
+
+#outlierplot()
 df["Kms_Driven"] = remove_outlier(df["Kms_Driven"])
 df["age"] = remove_outlier(df["age"])
 df["Selling_Price"] = remove_outlier(df["Selling_Price"])
-outlierplot()
+#outlierplot()
 
 scaler = MinMaxScaler(feature_range=(0, 1))
-df[['Kms_Driven', 'age',"Selling_Price","Present_Price"]] = scaler.fit_transform(df[['Kms_Driven','age',"Selling_Price","Present_Price"]])
-
-le = LabelEncoder()
+df[['Kms_Driven','age',"Present_Price"]] = scaler.fit_transform(df[['Kms_Driven','age',"Present_Price"]])
+mean = df[['Kms_Driven', 'age', 'Present_Price']].mean()
+std = df[['Kms_Driven', 'age', 'Present_Price']].std()
 
 encoder = OneHotEncoder(sparse_output=False, drop='first')
 categorical_cols = ['Fuel_Type', 'Seller_Type', 'Transmission']
@@ -110,8 +110,8 @@ def random_forest():
     rf = RandomForestRegressor()
     param_grid = {
         "n_estimators": list(range(400, 1000, 100)),
-        "max_depth": list(range(5, 15, 2)),  
-        "min_samples_split": [4, 6, 8], 
+        "max_depth": list(range(5, 15, 2)),
+        "min_samples_split": [4, 6, 8],
         "min_samples_leaf": [1,2,5,7],
         "max_features": ["log2", "sqrt", None]
     }
@@ -126,35 +126,79 @@ def linearRegression():
     lr=LinearRegression()
     lr.fit(x_train,y_train)
     return lr
-        
+
+def xgBoost():
+    xgb_model = xgb.XGBRegressor(objective='reg:squarederror', n_estimators=100, learning_rate=0.1)
+    xgb_model.fit(x_train,y_train)
+    return xgb_model
+
+def svr():
+    svr = SVR(kernel='rbf', C=100, epsilon=0.1)
+    svr.fit(x_train, y_train)
+    return svr
+
+def LGB():
+    lgb_model=lgb.LGBMRegressor()
+    lgb_model.fit(x_train,y_train)
+    return lgb_model
+
 def evulatemodel(model):
     y_train_pred_best = model.predict(x_train)
     mse_best = mean_squared_error(y_train, y_train_pred_best)
     mae_best = mean_absolute_error(y_train, y_train_pred_best)
     r2_best = r2_score(y_train, y_train_pred_best)
-    
+
     print("Train Model")
     print("Best Model - Mean Squared Error (MSE):", mse_best)
     print("Best Model - Mean Absolute Error (MAE):", mae_best)
     print("Best Model - R2 Score:", r2_best)
-    
+
     y_test_pred_best=model.predict(x_test)
     mse_best = mean_squared_error(y_test, y_test_pred_best)
     mae_best = mean_absolute_error(y_test, y_test_pred_best)
     r2_best = r2_score(y_test, y_test_pred_best)
-    
+
     print("Test Model")
     print("Best Model - Mean Squared Error (MSE):", mse_best)
     print("Best Model - Mean Absolute Error (MAE):", mae_best)
     print("Best Model - R2 Score:", r2_best)
-    
-    
-def xgBoost():
-    xgb_model = xgb.XGBRegressor(objective='reg:squarederror', n_estimators=100, learning_rate=0.1)
-    xgb_model.fit(x_train,y_train)
-    return xgb_model
-    
+
+
+
 #lr_model = linearRegression()
 #rf_model=random_forest()
-xgb_model=xgBoost()
-evulatemodel(xgb_model)
+#xgb_model=xgBoost()
+#svr_model=svr()
+lgb_model=LGB()
+evulatemodel(lgb_model)
+
+def newinput(model):
+    new_data = {
+        'Year': 2017,
+        'Present_Price': 5.59,
+        'Kms_Driven': 2700,
+        'Fuel_Type': 'Petrol',
+        'Seller_Type': 'Dealer',
+        'Transmission': 'Manual',
+        'Owner': 0
+    }
+
+    new_df = pd.DataFrame([new_data])
+    new_df['age'] = 2025 - new_df['Year']
+    new_df.drop('Year', axis=1, inplace=True)
+
+    encoded_cols = encoder.transform(new_df[categorical_cols])
+    encoded_df = pd.DataFrame(encoded_cols, columns=encoder.get_feature_names_out(categorical_cols))
+
+    new_df = pd.concat([new_df.drop(columns=categorical_cols), encoded_df], axis=1)
+
+    new_df = new_df.reindex(columns=x_train.columns, fill_value=0)
+
+    new_df[['Kms_Driven', 'age', 'Present_Price']] = scaler.transform(new_df[['Kms_Driven', 'age', 'Present_Price']])
+
+    prediction = model.predict(new_df)
+    print("Predict Price:", prediction[0])
+
+
+
+newinput(lgb_model)
