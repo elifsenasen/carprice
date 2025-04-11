@@ -21,7 +21,6 @@ if missing_data.sum() > 0:
 
 df['age'] = 2025 - df['Year']
 df.drop('Year',axis=1,inplace = True)
-#print(df)
 
 # #km plot
 # sns.set_style("darkgrid")
@@ -83,11 +82,11 @@ def remove_outlier(columns):
     columns = columns.clip(lower=lower_limit, upper=columns.quantile(0.90))
     return columns
 
-#outlierplot()
+outlierplot()
 df["Kms_Driven"] = remove_outlier(df["Kms_Driven"])
 df["age"] = remove_outlier(df["age"])
 df["Selling_Price"] = remove_outlier(df["Selling_Price"])
-#outlierplot()
+outlierplot()
 
 scaler = MinMaxScaler(feature_range=(0, 1))
 df[['Kms_Driven','age',"Present_Price"]] = scaler.fit_transform(df[['Kms_Driven','age',"Present_Price"]])
@@ -138,45 +137,40 @@ def svr():
     return svr
 
 def LGB():
-    lgb_model=lgb.LGBMRegressor()
+    lgb_model=lgb.LGBMRegressor(n_estimators=100, learning_rate=0.1, max_depth=-1,min_split_gain=0.1)
     lgb_model.fit(x_train,y_train)
     return lgb_model
 
 def evulatemodel(model):
-    y_train_pred_best = model.predict(x_train)
-    mse_best = mean_squared_error(y_train, y_train_pred_best)
-    mae_best = mean_absolute_error(y_train, y_train_pred_best)
-    r2_best = r2_score(y_train, y_train_pred_best)
+    y_train_pred = model.predict(x_train)
+    mse = mean_squared_error(y_train, y_train_pred)
+    mae = mean_absolute_error(y_train, y_train_pred)
+    r2 = r2_score(y_train, y_train_pred)
 
-    print("Train Model")
-    print("Best Model - Mean Squared Error (MSE):", mse_best)
-    print("Best Model - Mean Absolute Error (MAE):", mae_best)
-    print("Best Model - R2 Score:", r2_best)
+    y_test_pred = model.predict(x_test)
+    mse_test = mean_squared_error(y_test, y_test_pred)
+    mae_test = mean_absolute_error(y_test, y_test_pred)
+    r2_test = r2_score(y_test, y_test_pred)
 
-    y_test_pred_best=model.predict(x_test)
-    mse_best = mean_squared_error(y_test, y_test_pred_best)
-    mae_best = mean_absolute_error(y_test, y_test_pred_best)
-    r2_best = r2_score(y_test, y_test_pred_best)
-
-    print("Test Model")
-    print("Best Model - Mean Squared Error (MSE):", mse_best)
-    print("Best Model - Mean Absolute Error (MAE):", mae_best)
-    print("Best Model - R2 Score:", r2_best)
-
-
+    return {
+        "train_mse": mse, "train_mae": mae, "train_r2": r2,
+        "test_mse": mse_test, "test_mae": mae_test, "test_r2": r2_test
+    }
 
 #lr_model = linearRegression()
 #rf_model=random_forest()
 #xgb_model=xgBoost()
 #svr_model=svr()
 lgb_model=LGB()
-evulatemodel(lgb_model)
+
+result=(evulatemodel(lgb_model))
+print(result)
 
 def newinput(model):
     new_data = {
         'Year': 2017,
         'Present_Price': 5.59,
-        'Kms_Driven': 2700,
+        'Kms_Driven': 27000,
         'Fuel_Type': 'Petrol',
         'Seller_Type': 'Dealer',
         'Transmission': 'Manual',
@@ -198,7 +192,6 @@ def newinput(model):
 
     prediction = model.predict(new_df)
     print("Predict Price:", prediction[0])
-
 
 
 newinput(lgb_model)
