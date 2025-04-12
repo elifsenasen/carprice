@@ -12,6 +12,7 @@ import xgboost as xgb
 from sklearn.linear_model import LinearRegression
 from sklearn.svm import SVR
 import lightgbm as lgb
+from pydantic import BaseModel
 
 df= pd.read_csv("car data.csv")
 
@@ -82,11 +83,11 @@ def remove_outlier(columns):
     columns = columns.clip(lower=lower_limit, upper=columns.quantile(0.90))
     return columns
 
-outlierplot()
+#outlierplot()
 df["Kms_Driven"] = remove_outlier(df["Kms_Driven"])
 df["age"] = remove_outlier(df["age"])
 df["Selling_Price"] = remove_outlier(df["Selling_Price"])
-outlierplot()
+#outlierplot()
 
 scaler = MinMaxScaler(feature_range=(0, 1))
 df[['Kms_Driven','age',"Present_Price"]] = scaler.fit_transform(df[['Kms_Driven','age',"Present_Price"]])
@@ -164,17 +165,26 @@ def evulatemodel(model):
 lgb_model=LGB()
 
 result=(evulatemodel(lgb_model))
-print(result)
+#print(result)
 
-def newinput(model):
+class Car(BaseModel):
+    Year: int
+    Present_price: float
+    Kms_driven: int
+    Fuel_Type: str
+    Seller_Type: str
+    Transmission: str
+    Owner: int
+
+def newinput(model, car:Car):
     new_data = {
-        'Year': 2017,
-        'Present_Price': 5.59,
-        'Kms_Driven': 27000,
-        'Fuel_Type': 'Petrol',
-        'Seller_Type': 'Dealer',
-        'Transmission': 'Manual',
-        'Owner': 0
+        'Year': car.Year,
+        'Present_Price': car.Present_price,
+        'Kms_Driven': car.Kms_driven,
+        'Fuel_Type': car.Fuel_Type,
+        'Seller_Type': car.Seller_Type,
+        'Transmission': car.Transmission,
+        'Owner': car.Owner
     }
 
     new_df = pd.DataFrame([new_data])
@@ -191,7 +201,7 @@ def newinput(model):
     new_df[['Kms_Driven', 'age', 'Present_Price']] = scaler.transform(new_df[['Kms_Driven', 'age', 'Present_Price']])
 
     prediction = model.predict(new_df)
-    print("Predict Price:", prediction[0])
+    return prediction[0]
+    #print("Predict Price:", prediction[0])
 
-
-newinput(lgb_model)
+#newinput(lgb_model)
