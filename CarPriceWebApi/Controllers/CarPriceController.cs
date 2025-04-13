@@ -39,8 +39,26 @@ namespace CarPriceWebApi.Controllers
                 var prediction = await response.Content.ReadFromJsonAsync<PredictionResponse>();
                 return Ok(prediction);
             }
-
             return StatusCode((int)response.StatusCode, "Error has occured while predicting...");
+        }
+
+        [HttpPost("evaluate/{model_name}")]
+        public async Task<IActionResult> Evaluate([FromRoute] string model_name){
+
+            var url = $"http://localhost:8000/evaluate/{model_name}";
+            var response = await _httpClient.PostAsync(url,null);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                };
+
+                var result = await response.Content.ReadFromJsonAsync<EvaluationResult>(options);
+                return Ok(result);
+            }
+            return StatusCode((int)response.StatusCode, "Error has occured while evaluating...");
         }
     }
     
