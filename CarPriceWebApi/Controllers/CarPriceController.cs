@@ -4,7 +4,7 @@ using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
-using CarPriceWebApi.Models; // Model klasöründen CarInput sınıfı
+using CarPriceWebApi.Models;
 
 namespace CarPriceWebApi.Controllers
 {
@@ -29,7 +29,7 @@ namespace CarPriceWebApi.Controllers
         {
             var options = new JsonSerializerOptions
             {
-                PropertyNamingPolicy = null // BU satır çok önemli!
+                PropertyNamingPolicy = null 
             };
 
             var response = await _httpClient.PostAsJsonAsync("http://localhost:8000/predict", features, options);
@@ -40,7 +40,7 @@ namespace CarPriceWebApi.Controllers
                 return Ok(prediction);
             }
 
-            return StatusCode((int)response.StatusCode, "Tahmin alınırken hata oluştu.");
+            return StatusCode((int)response.StatusCode, "Error has occured while predicting...");
         }
     }
     
