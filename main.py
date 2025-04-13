@@ -31,6 +31,23 @@ async def predict(model_name:str, car: CarInput):
     predicted_price=carpricepred.newinput(selected_model,car)
     return {"predicted_price": float(predicted_price)}
 
+@app.post("/evulate/{model_name}")
+async def evulate(model_name:str):
+    if model_name == "lgb":
+        selected_model = carpricepred.LGB()
+    elif model_name == "rf":
+        selected_model = carpricepred.random_forest()
+    elif model_name == "lr":
+        selected_model = carpricepred.linearRegression()
+    elif model_name == "xgb":
+        selected_model = carpricepred.xgBoost()
+    elif model_name == "svr":
+        selected_model = carpricepred.svr()
+    else:
+        return {"error": "Model not found. Choose from: lgb, rf, lr, xgb, svr"}
+    results=carpricepred.evulatemodel(selected_model)
+    return{"results": results}
+    
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="127.0.0.1", port=8000)
