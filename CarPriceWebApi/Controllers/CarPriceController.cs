@@ -24,15 +24,15 @@ namespace CarPriceWebApi.Controllers
             public float Predicted_Price { get; set; }
         }
 
-        [HttpPost("predict")]
-        public async Task<IActionResult> Predict([FromBody] Car features)
+        [HttpPost("predict/{model_name}")]
+        public async Task<IActionResult> Predict([FromBody] Car features, [FromRoute] string model_name)
         {
             var options = new JsonSerializerOptions
             {
                 PropertyNamingPolicy = null 
             };
-
-            var response = await _httpClient.PostAsJsonAsync("http://localhost:8000/predict", features, options);
+            var url = $"http://localhost:8000/predict/{model_name}";
+            var response = await _httpClient.PostAsJsonAsync(url, features, options);
 
             if (response.IsSuccessStatusCode)
             {
