@@ -14,81 +14,32 @@ from sklearn.svm import SVR
 import lightgbm as lgb
 from pydantic import BaseModel
 
-df= pd.read_csv("car data.csv")
 
-missing_data = df.isnull().sum()
-if missing_data.sum() > 0:
-    df = df.fillna(df.median())
+def dataframe():
+    df= pd.read_csv("car data.csv")
+    missing_data = df.isnull().sum()
+    if missing_data.sum() > 0:
+        df = df.fillna(df.median())
+    df['age'] = 2025 - df['Year']
+    df.drop('Year',axis=1,inplace = True)
+    return df
 
-df['age'] = 2025 - df['Year']
-df.drop('Year',axis=1,inplace = True)
+def remove_outlier(df):
+    for col in ["Kms_Driven", "age", "Selling_Price"]:
+        first_qntl=df[col].quantile(0.25)
+        third_qntl=df[col].quantile(0.75)
+        iqr=third_qntl-first_qntl
+        lower_limit = first_qntl - 1.5 * iqr
+        upper_limit=third_qntl+1.5*iqr
+        df[col] = df[col].clip(lower=lower_limit, upper=df[col].quantile(0.90))
+    return df
 
-# #km plot
-# sns.set_style("darkgrid")
-# plt.figure(figsize=(10, 4))
+def final_df():
+    df = dataframe()
+    new_df = remove_outlier(df)
+    return new_df
 
-# # x axis km_driven
-# sns.scatterplot(x='Kms_Driven', y='Selling_Price', data=df, hue="Fuel_Type", palette="coolwarm", edgecolor="black")
-# plt.xticks(rotation=45)
-# plt.xlabel("Kilometre (KM)")
-# plt.ylabel("Selling Price")
-# plt.title("Changing Selling Price According KM")
-# plt.show()
-
-# #age plot
-# mean_price_age=df.groupby("age")["Selling_Price"].mean().reset_index()
-# sns.set_style("darkgrid")
-# plt.figure(figsize=(10, 4))
-# sns.lineplot(x=mean_price_age['age'], y=mean_price_age['Selling_Price'], marker="o", color="b")
-# plt.xlabel("Age")
-# plt.ylabel("Mean Price")
-# plt.title("Mean Selling Price According Age")
-# plt.show()
-
-# mean_fuel_price = df.groupby("Fuel_Type")["Selling_Price"].mean().reset_index()
-# sns.set_style("darkgrid")
-# plt.figure(figsize=(10, 4))
-# sns.barplot(x=mean_fuel_price['Fuel_Type'], y=mean_fuel_price['Selling_Price'])
-# plt.xlabel("Fuel")
-# plt.ylabel("Mean Price")
-# plt.title("Mean Selling Price According Fuel")
-# plt.show()
-
-def outlierplot():
-    plt.figure(figsize=(12, 6))
-    # Selling Price Outliers
-    plt.subplot(1, 3, 1)
-    sns.boxplot(y=df["Selling_Price"])
-    plt.title("Selling Price Outliers")
-
-    # KM Driven Outliers
-    plt.subplot(1, 3, 2)
-    sns.boxplot(y=df["Kms_Driven"])
-    plt.title("KM Driven Outliers")
-
-    # Age Outliers
-    plt.subplot(1, 3, 3)
-    sns.boxplot(y=df["age"])
-    plt.title("Age Outliers")
-
-    plt.tight_layout()
-    plt.show()
-
-def remove_outlier(columns):
-    first_qntl=columns.quantile(0.25)
-    third_qntl=columns.quantile(0.75)
-    iqr=third_qntl-first_qntl
-    lower_limit = first_qntl - 1.5 * iqr
-    upper_limit=third_qntl+1.5*iqr
-    columns = columns.clip(lower=lower_limit, upper=columns.quantile(0.90))
-    return columns
-
-#outlierplot()
-df["Kms_Driven"] = remove_outlier(df["Kms_Driven"])
-df["age"] = remove_outlier(df["age"])
-df["Selling_Price"] = remove_outlier(df["Selling_Price"])
-#outlierplot()
-
+df=final_df()
 scaler = MinMaxScaler(feature_range=(0, 1))
 df[['Kms_Driven','age',"Present_Price"]] = scaler.fit_transform(df[['Kms_Driven','age',"Present_Price"]])
 mean = df[['Kms_Driven', 'age', 'Present_Price']].mean()
@@ -159,7 +110,6 @@ def evulatemodel(model):
     }
 
 
-
 class Car(BaseModel):
     Year: int
     Present_price: float
@@ -170,8 +120,6 @@ class Car(BaseModel):
     Owner: int
 
 def newinput(model, car:Car):
-    result=(evulatemodel(model))
-    print(result)
     new_data = {
         'Year': car.Year,
         'Present_Price': car.Present_price,
@@ -197,6 +145,4 @@ def newinput(model, car:Car):
 
     prediction = model.predict(new_df)
     return prediction[0]
-    #print("Predict Price:", prediction[0])
 
-#newinput(lgb_model)
