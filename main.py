@@ -133,8 +133,8 @@ async def predict(model_name:str, car: CarInput):
     predicted_price=carpricepred.newinput(selected_model,car)
     return {"predicted_price": float(predicted_price)}
 
-@app.post("/evulate/{model_name}")
-async def evulate(model_name:str):
+@app.post("/evaluate/{model_name}")
+async def evaluate(model_name:str):
     if model_name == "lgb":
         selected_model = carpricepred.LGB()
     elif model_name == "rf":
