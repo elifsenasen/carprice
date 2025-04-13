@@ -29,7 +29,7 @@ async def predict(model_name:str, car: CarInput):
     else:
         return {"error": "Model not found. Choose from: lgb, rf, lr, xgb, svr"}
     predicted_price=carpricepred.newinput(selected_model,car)
-    return {"predicted_price": predicted_price}
+    return {"predicted_price": float(predicted_price)}
 
 if __name__ == "__main__":
     import uvicorn
