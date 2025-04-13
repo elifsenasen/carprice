@@ -158,14 +158,7 @@ def evulatemodel(model):
         "test_mse": mse_test, "test_mae": mae_test, "test_r2": r2_test
     }
 
-#lr_model = linearRegression()
-#rf_model=random_forest()
-#xgb_model=xgBoost()
-#svr_model=svr()
-lgb_model=LGB()
 
-result=(evulatemodel(lgb_model))
-#print(result)
 
 class Car(BaseModel):
     Year: int
@@ -177,6 +170,8 @@ class Car(BaseModel):
     Owner: int
 
 def newinput(model, car:Car):
+    result=(evulatemodel(model))
+    print(result)
     new_data = {
         'Year': car.Year,
         'Present_Price': car.Present_price,
