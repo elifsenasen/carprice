@@ -59,6 +59,7 @@ flutter:
   # the material Icons class.
   assets:
     - assets/gifs/
+    - assets/sounds/success.mp3
   uses-material-design: true
 
   # To add assets to your application, add an assets section, like this:

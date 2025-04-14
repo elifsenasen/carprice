@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:audioplayers/audioplayers.dart';
 
 void main() => runApp(MaterialApp(home: CarPriceApp()));
 
@@ -22,10 +23,13 @@ class _CarPriceAppState extends State<CarPriceApp> {
   String currentGif = "";
   Key gifKey = UniqueKey();
 
+  bool _isLoading = false; // Loading durumunu tutacak değişken
+  final AudioPlayer _audioPlayer = AudioPlayer();
+
   void _updateGif(String path) {
     setState(() {
       currentGif = path;
-      gifKey = UniqueKey(); 
+      gifKey = UniqueKey();
     });
   }
 
@@ -53,9 +57,54 @@ class _CarPriceAppState extends State<CarPriceApp> {
     );
   }
 
+  void showPredictionOverlay(BuildContext context, double predictedPrice) {
+    double minValue = 0;
+    double maxValue = 1000000;
+    double percentage = (predictedPrice - minValue) / (maxValue - minValue);
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          title: Text("Predicted Price", textAlign: TextAlign.center),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                "${predictedPrice.toStringAsFixed(0)} ₺",
+                style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.green),
+              ),
+              SizedBox(height: 20),
+              LinearProgressIndicator(
+                value: percentage.clamp(0.0, 1.0),
+                minHeight: 20,
+                backgroundColor: Colors.grey[300],
+                color: Colors.green,
+              ),
+              SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text("${minValue.toInt()} ₺"),
+                  Text("${maxValue ~/ 1000}K ₺"),
+                ],
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text("Exit"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    
     List<String> years = List.generate(46, (index) => (1980 + index).toString());
 
     return Scaffold(
@@ -124,7 +173,7 @@ class _CarPriceAppState extends State<CarPriceApp> {
               buildInput(
                 label: "Number of Owners",
                 selectedValue: selectedOwner,
-                items: ["1", "2", "3", "4","5","6","7","8","9","10"],
+                items: ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"],
                 onChanged: (value) => setState(() {
                   selectedOwner = value;
                 }),
@@ -144,18 +193,40 @@ class _CarPriceAppState extends State<CarPriceApp> {
                 onTap: () => _updateGif("assets/gifs/kms.gif"),
               ),
               SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () {
-                  print("Year: $selectedYear");
-                  print("Price: ${priceController.text}");
-                  print("Kms: ${kmsController.text}");
-                  print("Owner: $selectedOwner");
-                  print("Fuel: $selectedFuelType");
-                  print("Seller: $selectedSellerType");
-                  print("Transmission: $selectedTransmission");
-                },
-                child: Text("Predict"),
-              ),
+
+              // Eğer loading durumundaysa butonun yerine CircularProgressIndicator göster
+              if (_isLoading)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 20.0),
+                  child: CircularProgressIndicator(),
+                )
+              else
+                ElevatedButton(
+                  onPressed: () async {
+                    // Ses ve gif hemen gelir
+                    await _audioPlayer.play(AssetSource('sounds/success.mp3'));
+
+                    // Loading durumunu aç
+                    setState(() {
+                      _isLoading = true;
+                    });
+
+                    // 1 saniye bekleyelim, sonra loading'i kapatalım
+                    await Future.delayed(Duration(seconds: 1));
+
+                    // Loading durumu kapandı
+                    setState(() {
+                      _isLoading = false;
+                    });
+
+                    // Dummy predicted price
+                    double predictedPrice = 450000.0;
+
+                    // Prediction Overlay ekranını göster
+                    showPredictionOverlay(context, predictedPrice);
+                  },
+                  child: Text("Predict"),
+                ),
             ],
           ),
         ),
