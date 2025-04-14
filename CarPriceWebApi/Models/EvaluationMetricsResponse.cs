@@ -1,6 +1,6 @@
 namespace CarPriceWebApi.Models
 {
-  public class EvaluationMetrics
+  public class EvaluationMetricsResponse
   {
     public float train_mse { get; set; }
     public float train_mae { get; set; }
@@ -12,6 +12,6 @@ namespace CarPriceWebApi.Models
 
   public class EvaluationResult
     {
-        public EvaluationMetrics Results { get; set; }
+        public EvaluationMetricsResponse Results { get; set; }
     }
 }
