@@ -194,7 +194,7 @@ class _CarPriceAppState extends State<CarPriceApp> {
               ),
               SizedBox(height: 20),
 
-              // Eğer loading durumundaysa butonun yerine CircularProgressIndicator göster
+           
               if (_isLoading)
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 20.0),
@@ -203,26 +203,26 @@ class _CarPriceAppState extends State<CarPriceApp> {
               else
                 ElevatedButton(
                   onPressed: () async {
-                    // Ses ve gif hemen gelir
+                    
                     await _audioPlayer.play(AssetSource('sounds/success.mp3'));
 
-                    // Loading durumunu aç
+                    
                     setState(() {
                       _isLoading = true;
                     });
 
-                    // 1 saniye bekleyelim, sonra loading'i kapatalım
+                   
                     await Future.delayed(Duration(seconds: 1));
 
-                    // Loading durumu kapandı
+                  
                     setState(() {
                       _isLoading = false;
                     });
 
-                    // Dummy predicted price
+                    
                     double predictedPrice = 450000.0;
 
-                    // Prediction Overlay ekranını göster
+                   
                     showPredictionOverlay(context, predictedPrice);
                   },
                   child: Text("Predict"),
