@@ -19,11 +19,6 @@ namespace CarPriceWebApi.Controllers
             _httpClient = httpClientFactory.CreateClient();
         }
 
-        public class PredictionResponse
-        {
-            public float Predicted_Price { get; set; }
-        }
-
         [HttpPost("predict/{model_name}")]
         public async Task<IActionResult> Predict([FromBody] Car features, [FromRoute] string model_name)
         {
