@@ -45,15 +45,76 @@ namespace CarPriceWebApi.Controllers
 
             if (response.IsSuccessStatusCode)
             {
-                var options = new JsonSerializerOptions
-                {
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-                };
-
-                var result = await response.Content.ReadFromJsonAsync<EvaluationResult>(options);
+                var result = await response.Content.ReadFromJsonAsync<EvaluationResult>();
                 return Ok(result);
             }
             return StatusCode((int)response.StatusCode, "Error has occured while evaluating...");
+        }
+
+        [HttpGet("plot/outliers")]
+        public async Task<IActionResult> OutlierPlot(){
+            
+            var url = "http://localhost:8000/plot/outliers";
+            var response = await _httpClient.GetAsync(url);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var imageBytes = await response.Content.ReadAsByteArrayAsync();
+                return File(imageBytes, "image/png"); 
+            }
+            return StatusCode((int)response.StatusCode, "Could not load the plot...");
+        }
+
+        [HttpGet("plot/removed_outliers")]
+        public async Task<IActionResult> RemovedOutlierPlot(){
+            
+            var url = "http://localhost:8000/plot/removed_outliers";
+            var response = await _httpClient.GetAsync(url);
+
+            if(response.IsSuccessStatusCode){
+                var imageBytes = await response.Content.ReadAsByteArrayAsync();
+                return File(imageBytes, "image/png"); 
+            }
+            return StatusCode((int)response.StatusCode, "Could not load the plot...");
+        }
+
+        [HttpGet("plot/km")]
+        public async Task<IActionResult> PlotKm(){
+            
+            var url = "http://localhost:8000/plot/km";
+            var response = await _httpClient.GetAsync(url);
+
+            if(response.IsSuccessStatusCode){
+                var imageBytes = await response.Content.ReadAsByteArrayAsync();
+                return File(imageBytes, "image/png"); 
+            }
+            return StatusCode((int)response.StatusCode, "Could not load the plot...");
+        }
+
+        [HttpGet("plot/age")]
+        public async Task<IActionResult> PlotAge(){
+            
+            var url = "http://localhost:8000/plot/age";
+            var response = await _httpClient.GetAsync(url);
+
+            if(response.IsSuccessStatusCode){
+                var imageBytes = await response.Content.ReadAsByteArrayAsync();
+                return File(imageBytes, "image/png"); 
+            }
+            return StatusCode((int)response.StatusCode, "Could not load the plot...");
+        }
+
+        [HttpGet("plot/fuel")]
+        public async Task<IActionResult> PlotFuel(){
+            
+            var url = "http://localhost:8000/plot/fuel";
+            var response = await _httpClient.GetAsync(url);
+
+            if(response.IsSuccessStatusCode){
+                var imageBytes = await response.Content.ReadAsByteArrayAsync();
+                return File(imageBytes, "image/png"); 
+            }
+            return StatusCode((int)response.StatusCode, "Could not load the plot...");
         }
     }
     
