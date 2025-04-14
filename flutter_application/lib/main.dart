@@ -146,7 +146,7 @@ class _CarPriceAppState extends State<CarPriceApp> {
               buildInput(
                 label: "Fuel Type",
                 selectedValue: selectedFuelType,
-                items: ["Petrol", "Diesel", "Electric", "Hybrid"],
+                items: ["Petrol", "Diesel", "CNG"],
                 onChanged: (value) => setState(() {
                   selectedFuelType = value;
                 }),
@@ -155,7 +155,7 @@ class _CarPriceAppState extends State<CarPriceApp> {
               buildInput(
                 label: "Seller Type",
                 selectedValue: selectedSellerType,
-                items: ["Dealer", "Private"],
+                items: ["Dealer", "Individual"],
                 onChanged: (value) => setState(() {
                   selectedSellerType = value;
                 }),
