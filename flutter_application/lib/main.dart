@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 void main() => runApp(MaterialApp(home: CarPriceApp()));
 
@@ -57,50 +59,123 @@ class _CarPriceAppState extends State<CarPriceApp> {
     );
   }
 
-  void showPredictionOverlay(BuildContext context, double predictedPrice) {
-    double minValue = 0;
-    double maxValue = 1000000;
-    double percentage = (predictedPrice - minValue) / (maxValue - minValue);
+void showPredictionOverlay(BuildContext context, double predictedPrice) {
+  double minValue = 0;
+  double maxValue = 100000;
+  double percentage = (predictedPrice - minValue) / (maxValue - minValue);
 
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-          title: Text("Predicted Price", textAlign: TextAlign.center),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                "${predictedPrice.toStringAsFixed(0)} ₺",
-                style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.green),
-              ),
-              SizedBox(height: 20),
-              LinearProgressIndicator(
-                value: percentage.clamp(0.0, 1.0),
-                minHeight: 20,
-                backgroundColor: Colors.grey[300],
-                color: Colors.green,
-              ),
-              SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text("${minValue.toInt()} ₺"),
-                  Text("${maxValue ~/ 1000}K ₺"),
-                ],
+  showDialog(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        title: Text("Predicted Price", textAlign: TextAlign.center),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              "\$${predictedPrice.toStringAsFixed(0)}",
+              style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.green),
+            ),
+            SizedBox(height: 20),
+            LinearProgressIndicator(
+              value: percentage.clamp(0.0, 1.0),
+              minHeight: 20,
+              backgroundColor: Colors.grey[300],
+              color: Colors.green,
+            ),
+            SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text("\$${minValue.toInt()}"),
+                Text("\$${(maxValue / 1000).toStringAsFixed(0)}K"), 
+              ],
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text("Exit"),
+          ),
+        ],
+      );
+    },
+  );
+}
+
+
+  Future<void> _predictPrice() async {
+    final String modelName = "lr";  
+    final String apiUrl = "http://192.168.1.59:8000/predict/$modelName";  
+
+    final carData = {
+      'Year': selectedYear != null ? int.parse(selectedYear!) : null,
+      'Present_price': double.tryParse(priceController.text),
+      'Kms_driven': int.tryParse(kmsController.text),
+      'Fuel_Type': selectedFuelType,
+      'Seller_Type': selectedSellerType,
+      'Transmission': selectedTransmission,
+      'Owner': selectedOwner != null ? int.parse(selectedOwner!) : null,
+    };
+    print("Car data being sent: ${jsonEncode(carData)}");
+
+    try {
+      setState(() {
+        _isLoading = true;
+      });
+
+      final response = await http.post(
+        Uri.parse(apiUrl),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(carData),
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseData = jsonDecode(response.body);
+        final double predictedPrice = responseData['predicted_price'] as double;
+
+        await _audioPlayer.play(AssetSource('sounds/success.mp3'));  // Play sound
+
+        showPredictionOverlay(context, predictedPrice);
+      } else {
+        // Handle error from the backend
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text("Error"),
+            content: Text("Could not predict the car price. Please try again."),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text("Ok"),
               ),
             ],
           ),
+        );
+      }
+    } catch (e) {
+      print(e);
+     
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text("Error"),
+          content: Text("An error occurred. Please try again later."),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: Text("Exit"),
+              child: Text("Ok"),
             ),
           ],
-        );
-      },
-    );
+        ),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   @override
@@ -193,8 +268,6 @@ class _CarPriceAppState extends State<CarPriceApp> {
                 onTap: () => _updateGif("assets/gifs/kms.gif"),
               ),
               SizedBox(height: 20),
-
-           
               if (_isLoading)
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 20.0),
@@ -202,29 +275,7 @@ class _CarPriceAppState extends State<CarPriceApp> {
                 )
               else
                 ElevatedButton(
-                  onPressed: () async {
-                    
-                    await _audioPlayer.play(AssetSource('sounds/success.mp3'));
-
-                    
-                    setState(() {
-                      _isLoading = true;
-                    });
-
-                   
-                    await Future.delayed(Duration(seconds: 1));
-
-                  
-                    setState(() {
-                      _isLoading = false;
-                    });
-
-                    
-                    double predictedPrice = 450000.0;
-
-                   
-                    showPredictionOverlay(context, predictedPrice);
-                  },
+                  onPressed: _predictPrice,
                   child: Text("Predict"),
                 ),
             ],
