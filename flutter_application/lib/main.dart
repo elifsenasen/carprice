@@ -49,66 +49,69 @@ class _CarPriceAppState extends State<CarPriceApp> {
         onChanged: onChanged,
         decoration: InputDecoration(labelText: label),
         onTap: () => _updateGif(gifPath),
-        items: items.map((String value) {
-          return DropdownMenuItem<String>(
-            value: value,
-            child: Text(value),
-          );
-        }).toList(),
+        items:
+            items.map((String value) {
+              return DropdownMenuItem<String>(value: value, child: Text(value));
+            }).toList(),
       ),
     );
   }
 
-void showPredictionOverlay(BuildContext context, double predictedPrice) {
-  double minValue = 0;
-  double maxValue = 100000;
-  double percentage = (predictedPrice - minValue) / (maxValue - minValue);
+  void showPredictionOverlay(BuildContext context, double predictedPrice) {
+    double minValue = 0;
+    double maxValue = 100000;
+    double percentage = (predictedPrice - minValue) / (maxValue - minValue);
 
-  showDialog(
-    context: context,
-    builder: (context) {
-      return AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-        title: Text("Predicted Price", textAlign: TextAlign.center),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              "\$${predictedPrice.toStringAsFixed(0)}",
-              style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.green),
-            ),
-            SizedBox(height: 20),
-            LinearProgressIndicator(
-              value: percentage.clamp(0.0, 1.0),
-              minHeight: 20,
-              backgroundColor: Colors.grey[300],
-              color: Colors.green,
-            ),
-            SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text("\$${minValue.toInt()}"),
-                Text("\$${(maxValue / 1000).toStringAsFixed(0)}K"), 
-              ],
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          title: Text("Predicted Price", textAlign: TextAlign.center),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                "\$${predictedPrice.toStringAsFixed(0)}",
+                style: TextStyle(
+                  fontSize: 26,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.green,
+                ),
+              ),
+              SizedBox(height: 20),
+              LinearProgressIndicator(
+                value: percentage.clamp(0.0, 1.0),
+                minHeight: 20,
+                backgroundColor: Colors.grey[300],
+                color: Colors.green,
+              ),
+              SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text("\$${minValue.toInt()}"),
+                  Text("\$${(maxValue / 1000).toStringAsFixed(0)}K"),
+                ],
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text("Exit"),
             ),
           ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text("Exit"),
-          ),
-        ],
-      );
-    },
-  );
-}
-
+        );
+      },
+    );
+  }
 
   Future<void> _predictPrice() async {
-    final String modelName = "lr";  
-    final String apiUrl = "http://192.168.1.59:8000/predict/$modelName";  
+    final String modelName = "lr";
+    final String apiUrl = "http://localhost:5266/CarPrice/predict/$modelName";
 
     final carData = {
       'Year': selectedYear != null ? int.parse(selectedYear!) : null,
@@ -131,45 +134,52 @@ void showPredictionOverlay(BuildContext context, double predictedPrice) {
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(carData),
       );
+      final Map<String, dynamic> responseData = jsonDecode(response.body);
 
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> responseData = jsonDecode(response.body);
-        final double predictedPrice = responseData['predicted_price'] as double;
+      if (responseData.containsKey('predicted_Price')) {
+        final double predictedPrice = responseData['predicted_Price'] as double;
 
-        await _audioPlayer.play(AssetSource('sounds/success.mp3'));  // Play sound
+        await _audioPlayer.play(
+          AssetSource('sounds/success.mp3'),
+        ); // Play sound
 
         showPredictionOverlay(context, predictedPrice);
       } else {
+        print("asdasd");
         // Handle error from the backend
         showDialog(
           context: context,
-          builder: (context) => AlertDialog(
-            title: Text("Error"),
-            content: Text("Could not predict the car price. Please try again."),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: Text("Ok"),
+          builder:
+              (context) => AlertDialog(
+                title: Text("Error"),
+                content: Text(
+                  "Could not predict the car price. Please try again.",
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: Text("Ok"),
+                  ),
+                ],
               ),
-            ],
-          ),
         );
       }
     } catch (e) {
       print(e);
-     
+
       showDialog(
         context: context,
-        builder: (context) => AlertDialog(
-          title: Text("Error"),
-          content: Text("An error occurred. Please try again later."),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text("Ok"),
+        builder:
+            (context) => AlertDialog(
+              title: Text("Error"),
+              content: Text("An error occurred. Please try again later."),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: Text("Ok"),
+                ),
+              ],
             ),
-          ],
-        ),
       );
     } finally {
       setState(() {
@@ -180,7 +190,10 @@ void showPredictionOverlay(BuildContext context, double predictedPrice) {
 
   @override
   Widget build(BuildContext context) {
-    List<String> years = List.generate(46, (index) => (1980 + index).toString());
+    List<String> years = List.generate(
+      46,
+      (index) => (1980 + index).toString(),
+    );
 
     return Scaffold(
       appBar: AppBar(title: Text("Car Price Predictor")),
@@ -213,45 +226,50 @@ void showPredictionOverlay(BuildContext context, double predictedPrice) {
                 label: "Year of Manufacture",
                 selectedValue: selectedYear,
                 items: years,
-                onChanged: (value) => setState(() {
-                  selectedYear = value;
-                }),
+                onChanged:
+                    (value) => setState(() {
+                      selectedYear = value;
+                    }),
                 gifPath: "assets/gifs/year.gif",
               ),
               buildInput(
                 label: "Fuel Type",
                 selectedValue: selectedFuelType,
                 items: ["Petrol", "Diesel", "CNG"],
-                onChanged: (value) => setState(() {
-                  selectedFuelType = value;
-                }),
+                onChanged:
+                    (value) => setState(() {
+                      selectedFuelType = value;
+                    }),
                 gifPath: "assets/gifs/fuel.gif",
               ),
               buildInput(
                 label: "Seller Type",
                 selectedValue: selectedSellerType,
                 items: ["Dealer", "Individual"],
-                onChanged: (value) => setState(() {
-                  selectedSellerType = value;
-                }),
+                onChanged:
+                    (value) => setState(() {
+                      selectedSellerType = value;
+                    }),
                 gifPath: "assets/gifs/seller.gif",
               ),
               buildInput(
                 label: "Transmission Type",
                 selectedValue: selectedTransmission,
                 items: ["Manual", "Automatic"],
-                onChanged: (value) => setState(() {
-                  selectedTransmission = value;
-                }),
+                onChanged:
+                    (value) => setState(() {
+                      selectedTransmission = value;
+                    }),
                 gifPath: "assets/gifs/transmission.gif",
               ),
               buildInput(
                 label: "Number of Owners",
                 selectedValue: selectedOwner,
                 items: ["0", "1"],
-                onChanged: (value) => setState(() {
-                  selectedOwner = value;
-                }),
+                onChanged:
+                    (value) => setState(() {
+                      selectedOwner = value;
+                    }),
                 gifPath: "assets/gifs/owner.gif",
               ),
               SizedBox(height: 12),
