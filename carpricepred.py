@@ -105,8 +105,7 @@ def evulatemodel(model):
     r2_test = r2_score(y_test, y_test_pred)
 
     return {
-        "train_mse": mse, "train_mae": mae, "train_r2": r2,
-        "test_mse": mse_test, "test_mae": mae_test, "test_r2": r2_test
+        r2_test
     }
 
 
