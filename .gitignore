@@ -1,0 +1,51 @@
+## Build results
+bin/
+obj/
+
+## User-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+## Auto-generated files
+Generated_Code/
+
+## Backup & log files
+*.log
+*.bak
+*.tmp
+
+## Visual Studio specific
+.vscode/
+.idea/
+*.dbmdl
+*.db
+
+## Rider
+.idea/
+
+## ASP.NET Scaffolding
+ScaffoldingReadMe.txt
+
+## NuGet
+*.nupkg
+*.snupkg
+.nuget/
+project.lock.json
+project.fragment.lock.json
+packages/
+*.nuspec
+
+## Resharper
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
+
+## Windows image file caches
+Thumbs.db
+ehthumbs.db
+
+## Others
+Desktop.ini
