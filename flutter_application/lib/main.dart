@@ -22,10 +22,11 @@ class _CarPriceAppState extends State<CarPriceApp> {
   String? selectedTransmission;
   String? selectedOwner;
   String? selectedModel;
+  String? selectedPlot;
   String currentGif = "";
   Key gifKey = UniqueKey();
 
-  bool _isLoading = false; // Loading durumunu tutacak değişken
+  bool _isLoading = false; 
   final AudioPlayer _audioPlayer = AudioPlayer();
 
   @override
@@ -93,7 +94,7 @@ class _CarPriceAppState extends State<CarPriceApp> {
               ),
               SizedBox(height: 10),
               Text(
-                "Accuracy: ${accuracy.toStringAsFixed(2)}%",
+                "Accuracy: ${accuracy.toStringAsFixed(2)}",
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -127,6 +128,41 @@ class _CarPriceAppState extends State<CarPriceApp> {
       },
     );
   }
+void _showErrorDialog(String message) {
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text("Error"),
+      content: Text(message),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text("OK"),
+        ),
+      ],
+    ),
+  );
+}
+
+Future<void> _showPlot(String plotName) async {
+  try {
+    final String plotUrl = "http://localhost:5266/CarPrice/plot/$plotName";
+    final response = await http.get(Uri.parse(plotUrl));
+
+    if (response.statusCode == 200) {
+      final imageBytes = response.bodyBytes;
+      showDialog(
+        context: context,
+        builder: (context) => Dialog(child: Image.memory(imageBytes)),
+      );
+    } else {
+      _showErrorDialog("An error occurred. Please try again later.");
+    }
+  } catch (e) {
+    _showErrorDialog("An error occurred. Please try again later.");
+  }
+}
+
 
   Future<void> _predictPrice() async {
     if (selectedModel == null) {
@@ -144,7 +180,7 @@ class _CarPriceAppState extends State<CarPriceApp> {
     ),
   );
   return;
-}
+  }
     
     final String apiUrl = "http://localhost:5266/CarPrice/predict/$selectedModel";
     final String evaluateUrl= "http://localhost:5266/CarPrice/evaluate/$selectedModel";
@@ -176,7 +212,7 @@ class _CarPriceAppState extends State<CarPriceApp> {
         final double predictedPrice = responseData['predicted_Price'] as double;
         final evalResponse = await http.post(Uri.parse(evaluateUrl));
         final evalData = jsonDecode(evalResponse.body);
-        final double accuracy = evalData['results'] ?? 0.0;
+        final double accuracy = evalData['results'];
 
         await _audioPlayer.play(
           AssetSource('sounds/success.mp3'),
@@ -204,36 +240,15 @@ class _CarPriceAppState extends State<CarPriceApp> {
         );
       }
     } catch (e) {
-      print(e);
-
-      showDialog(
-        context: context,
-        builder:
-            (context) => AlertDialog(
-              title: Text("Error"),
-              content: Text("An error occurred. Please try again later."),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: Text("Ok"),
-                ),
-              ],
-            ),
-      );
+     _showErrorDialog("An error occurred. Please try again later.");
     } finally {
       setState(() {
         _isLoading = false;
       });
     }
   }
-
   @override
   Widget build(BuildContext context) {
-    List<String> years = List.generate(
-      46,
-      (index) => (1980 + index).toString(),
-    );
-
     return Scaffold(
       appBar: AppBar(title: Text("Car Price Predictor")),
       body: Padding(
@@ -349,18 +364,43 @@ class _CarPriceAppState extends State<CarPriceApp> {
                   onTap: () => _updateGif("assets/gifs/kms.gif"),
                 ),
               ),
-
+               buildInput(
+                label: "Plot Type(Optional)",
+                selectedValue: selectedPlot,
+                items: ["km", "fuel","age","outliers","removed_outliers"],
+                onChanged:
+                    (value) => setState(() {
+                      selectedPlot = value;
+                    }),
+                gifPath: "assets/gifs/plot.gif",
+              ),
               SizedBox(height: 20),
               if (_isLoading)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 20.0),
-                  child: CircularProgressIndicator(),
-                )
-              else
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 20.0),
+                child: CircularProgressIndicator(),
+              )
+            else
+              Column(
+                children: [
+                  ElevatedButton(
+                    onPressed: _predictPrice,
+                    child: Text("Predict"),
+                  ),
+                  SizedBox(height: 15),
                 ElevatedButton(
-                  onPressed: _predictPrice,
-                  child: Text("Predict"),
-                ),
+                onPressed: selectedPlot == null
+                    ? null
+                    : () {
+                        _showPlot(selectedPlot!);
+                      },
+                child: Text("Show Plot"),
+              ),
+
+                ],
+              )
+
+                
             ],
           ),
         ),

@@ -86,6 +86,7 @@ def plot_fuel():
 
 @app.get("/plot/outliers")
 def outlierplot():
+    df=carpricepred.dataframe()
     fig, axes = plt.subplots(1, 3, figsize=(15, 5))
     sns.boxplot(y=df["Selling_Price"], ax=axes[0])
     axes[0].set_title("Selling Price Outliers")
@@ -159,7 +160,6 @@ async def evaluate(model_name:str):
         return {"error": "Model not found. Choose from: lgb, rf, lr, xgb, svr"}
     results=carpricepred.evulatemodel(selected_model)
     result_value = next(iter(results))
-    print(type(result_value))
     return{"results": result_value}
     
 if __name__ == "__main__":
