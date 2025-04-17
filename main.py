@@ -1,3 +1,4 @@
+import logging
 from fastapi import FastAPI
 from pydantic import BaseModel
 import carpricepred
@@ -157,7 +158,9 @@ async def evaluate(model_name:str):
     else:
         return {"error": "Model not found. Choose from: lgb, rf, lr, xgb, svr"}
     results=carpricepred.evulatemodel(selected_model)
-    return{"results": results}
+    result_value = next(iter(results))
+    print(type(result_value))
+    return{"results": result_value}
     
 if __name__ == "__main__":
     import uvicorn

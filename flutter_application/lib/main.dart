@@ -15,18 +15,24 @@ class CarPriceApp extends StatefulWidget {
 class _CarPriceAppState extends State<CarPriceApp> {
   final TextEditingController priceController = TextEditingController();
   final TextEditingController kmsController = TextEditingController();
+  final TextEditingController yearController= TextEditingController();
 
-  String? selectedYear;
   String? selectedFuelType;
   String? selectedSellerType;
   String? selectedTransmission;
   String? selectedOwner;
-
+  String? selectedModel;
   String currentGif = "";
   Key gifKey = UniqueKey();
 
   bool _isLoading = false; // Loading durumunu tutacak değişken
   final AudioPlayer _audioPlayer = AudioPlayer();
+
+  @override
+    void initState() {
+  super.initState();
+  currentGif = "assets/gifs/initial.gif"; 
+}
 
   void _updateGif(String path) {
     setState(() {
@@ -36,28 +42,32 @@ class _CarPriceAppState extends State<CarPriceApp> {
   }
 
   Widget buildInput({
-    required String label,
-    required String? selectedValue,
-    required List<String> items,
-    required Function(String?) onChanged,
-    required String gifPath,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
+  required String label,
+  required String? selectedValue,
+  required List<String> items,
+  required Function(String?) onChanged,
+  required String gifPath,
+}) {
+  return Padding(
+    padding: const EdgeInsets.symmetric(vertical: 8.0),
+    child: Container(
+      width: double.infinity, 
       child: DropdownButtonFormField<String>(
         value: selectedValue,
         onChanged: onChanged,
-        decoration: InputDecoration(labelText: label),
+        decoration: InputDecoration(
+          labelText: label,
+          border: OutlineInputBorder(), 
+        ),
         onTap: () => _updateGif(gifPath),
-        items:
-            items.map((String value) {
-              return DropdownMenuItem<String>(value: value, child: Text(value));
-            }).toList(),
+        items: items.map((String value) {
+          return DropdownMenuItem<String>(value: value, child: Text(value));
+        }).toList(),
       ),
-    );
-  }
-
-  void showPredictionOverlay(BuildContext context, double predictedPrice) {
+    ),
+  );
+}
+  void showPredictionOverlay(BuildContext context, double predictedPrice, double accuracy) {
     double minValue = 0;
     double maxValue = 100000;
     double percentage = (predictedPrice - minValue) / (maxValue - minValue);
@@ -79,6 +89,15 @@ class _CarPriceAppState extends State<CarPriceApp> {
                   fontSize: 26,
                   fontWeight: FontWeight.bold,
                   color: Colors.green,
+                ),
+              ),
+              SizedBox(height: 10),
+              Text(
+                "Accuracy: ${accuracy.toStringAsFixed(2)}%",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blue,
                 ),
               ),
               SizedBox(height: 20),
@@ -110,11 +129,28 @@ class _CarPriceAppState extends State<CarPriceApp> {
   }
 
   Future<void> _predictPrice() async {
-    final String modelName = "lr";
-    final String apiUrl = "http://localhost:5266/CarPrice/predict/$modelName";
+    if (selectedModel == null) {
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text("Warning"),
+      content: Text("Please select a model before predicting."),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text("OK"),
+        ),
+      ],
+    ),
+  );
+  return;
+}
+    
+    final String apiUrl = "http://localhost:5266/CarPrice/predict/$selectedModel";
+    final String evaluateUrl= "http://localhost:5266/CarPrice/evaluate/$selectedModel";
 
     final carData = {
-      'Year': selectedYear != null ? int.parse(selectedYear!) : null,
+      'Year': int.tryParse(yearController.text),
       'Present_price': double.tryParse(priceController.text),
       'Kms_driven': int.tryParse(kmsController.text),
       'Fuel_Type': selectedFuelType,
@@ -138,12 +174,15 @@ class _CarPriceAppState extends State<CarPriceApp> {
 
       if (responseData.containsKey('predicted_Price')) {
         final double predictedPrice = responseData['predicted_Price'] as double;
+        final evalResponse = await http.post(Uri.parse(evaluateUrl));
+        final evalData = jsonDecode(evalResponse.body);
+        final double accuracy = evalData['results'] ?? 0.0;
 
         await _audioPlayer.play(
           AssetSource('sounds/success.mp3'),
-        ); // Play sound
+        ); 
 
-        showPredictionOverlay(context, predictedPrice);
+        showPredictionOverlay(context, predictedPrice, accuracy);
       } else {
         print("asdasd");
         // Handle error from the backend
@@ -221,21 +260,21 @@ class _CarPriceAppState extends State<CarPriceApp> {
                     ),
                   ),
                 ),
-              SizedBox(height: 12),
+              SizedBox(height: 15),
               buildInput(
-                label: "Year of Manufacture",
-                selectedValue: selectedYear,
-                items: years,
+                label: "Selected Model",
+                selectedValue: selectedModel,
+                items: ['lr', 'rf', 'xgb', 'svr', 'lgb'],
                 onChanged:
                     (value) => setState(() {
-                      selectedYear = value;
+                      selectedModel = value;
                     }),
-                gifPath: "assets/gifs/year.gif",
+                gifPath: "assets/gifs/model.gif",
               ),
               buildInput(
                 label: "Fuel Type",
                 selectedValue: selectedFuelType,
-                items: ["Petrol", "Diesel", "CNG"],
+                items: ["Petrol", "Diesel"],
                 onChanged:
                     (value) => setState(() {
                       selectedFuelType = value;
@@ -272,19 +311,45 @@ class _CarPriceAppState extends State<CarPriceApp> {
                     }),
                 gifPath: "assets/gifs/owner.gif",
               ),
-              SizedBox(height: 12),
-              TextField(
-                controller: priceController,
-                keyboardType: TextInputType.numberWithOptions(decimal: true),
-                decoration: InputDecoration(labelText: "Present Price (\$)"),
-                onTap: () => _updateGif("assets/gifs/price.gif"),
+              Container(
+                width: double.infinity,
+                child: TextField(
+                  controller: yearController,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    labelText: "Manufacturing Year",
+                    border: OutlineInputBorder(),
+                  ),
+                  onTap: () => _updateGif("assets/gifs/year.gif"),
+                ),
               ),
-              TextField(
-                controller: kmsController,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(labelText: "Kms Driven"),
-                onTap: () => _updateGif("assets/gifs/kms.gif"),
+              SizedBox(height: 15),
+              Container(
+                width: double.infinity,
+                child: TextField(
+                  controller: priceController,
+                  keyboardType: TextInputType.numberWithOptions(decimal: true),
+                  decoration: InputDecoration(
+                    labelText: "Present Price (\$)",
+                    border: OutlineInputBorder(),
+                  ),
+                  onTap: () => _updateGif("assets/gifs/price.gif"),
+                ),
               ),
+              SizedBox(height: 15),
+              Container(
+                width: double.infinity,
+                child: TextField(
+                  controller: kmsController,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    labelText: "Kms Driven",
+                    border: OutlineInputBorder(),
+                  ),
+                  onTap: () => _updateGif("assets/gifs/kms.gif"),
+                ),
+              ),
+
               SizedBox(height: 20),
               if (_isLoading)
                 Padding(
