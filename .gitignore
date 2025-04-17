@@ -1,51 +1,45 @@
-## Build results
-bin/
-obj/
-
-## User-specific files
-*.rsuser
-*.suo
-*.user
-*.userosscache
-*.sln.docstates
-
-## Auto-generated files
-Generated_Code/
-
-## Backup & log files
+# Miscellaneous
+*.class
 *.log
-*.bak
-*.tmp
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
 
-## Visual Studio specific
-.vscode/
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
 .idea/
-*.dbmdl
-*.db
 
-## Rider
-.idea/
+# The .vscode folder contains launch configuration and tasks you configure in
+# VS Code which you may wish to be included in version control, so this line
+# is commented out by default.
+#.vscode/
 
-## ASP.NET Scaffolding
-ScaffoldingReadMe.txt
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/build/
 
-## NuGet
-*.nupkg
-*.snupkg
-.nuget/
-project.lock.json
-project.fragment.lock.json
-packages/
-*.nuspec
+# Symbolication related
+app.*.symbols
 
-## Resharper
-_ReSharper*/
-*.[Rr]e[Ss]harper
-*.DotSettings.user
+# Obfuscation related
+app.*.map.json
 
-## Windows image file caches
-Thumbs.db
-ehthumbs.db
-
-## Others
-Desktop.ini
+# Android Studio will place build artifacts here
+/android/app/debug
+/android/app/profile
+/android/app/release
