@@ -37,19 +37,22 @@ namespace CarPriceWebApi.Controllers
             return StatusCode((int)response.StatusCode, "Error has occured while predicting...");
         }
 
-        [HttpPost("evaluate/{model_name}")]
-        public async Task<IActionResult> Evaluate([FromRoute] string model_name){
-
+       [HttpPost("evaluate/{model_name}")]
+        public async Task<IActionResult> Evaluate([FromRoute] string model_name)
+        {
             var url = $"http://localhost:8000/evaluate/{model_name}";
-            var response = await _httpClient.PostAsync(url,null);
-
-            if (response.IsSuccessStatusCode)
+            var response = await _httpClient.PostAsync(url, null);
+            
+           if (response.IsSuccessStatusCode)
             {
                 var result = await response.Content.ReadFromJsonAsync<EvaluationResult>();
+
                 return Ok(result);
             }
-            return StatusCode((int)response.StatusCode, "Error has occured while evaluating...");
+
+            return StatusCode((int)response.StatusCode, "Error has occurred while evaluating...");
         }
+
 
         [HttpGet("plot/outliers")]
         public async Task<IActionResult> OutlierPlot(){
