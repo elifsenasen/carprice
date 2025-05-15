@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  fastapi:
+    build:
+      context: ./fastapi
+    image: app-fastapi:1.0
+    ports:
+      - "8000:8000"
+    networks:
+      - app-network
+
+  dotnet:
+    build:
+      context: ./CarPriceWebApi
+    image: app-dotnet:1.0
+    ports:
+      - "5266:80"
+    networks:
+      - app-network
+    depends_on:
+      - fastapi
+
+networks:
+  app-network:
+    driver: bridge
