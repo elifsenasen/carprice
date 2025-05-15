@@ -1,4 +1,3 @@
-<<<<<<< HEAD:fastapi/carpricepred.py
 import pandas as pd
 import numpy as np
 import seaborn as sns
@@ -147,7 +146,6 @@ def newinput(model, car:Car):
     prediction = model.predict(new_df)
     return prediction[0]
 
-=======
 import pandas as pd
 import numpy as np
 import seaborn as sns
@@ -295,4 +293,3 @@ def newinput(model, car:Car):
     prediction = model.predict(new_df)
     return prediction[0]
 
->>>>>>> 3cf29467c4ab4ec40028e6dc73b0762f7c8154bc:carpricepred.py

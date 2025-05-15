@@ -26,7 +26,7 @@ namespace CarPriceWebApi.Controllers
             {
                 PropertyNamingPolicy = null 
             };
-            var url = $"http://localhost:8000/predict/{model_name}";
+            var url = $"http://fastapi:8000/predict/{model_name}";
             var response = await _httpClient.PostAsJsonAsync(url, features, options);
 
             if (response.IsSuccessStatusCode)
@@ -40,7 +40,7 @@ namespace CarPriceWebApi.Controllers
        [HttpPost("evaluate/{model_name}")]
         public async Task<IActionResult> Evaluate([FromRoute] string model_name)
         {
-            var url = $"http://localhost:8000/evaluate/{model_name}";
+            var url = $"http://fastapi:8000/evaluate/{model_name}";
             var response = await _httpClient.PostAsync(url, null);
             
            if (response.IsSuccessStatusCode)
@@ -57,7 +57,7 @@ namespace CarPriceWebApi.Controllers
         [HttpGet("plot/outliers")]
         public async Task<IActionResult> OutlierPlot(){
             
-            var url = "http://localhost:8000/plot/outliers";
+            var url = "http://fastapi:8000/plot/outliers";
             var response = await _httpClient.GetAsync(url);
 
             if (response.IsSuccessStatusCode)
@@ -71,7 +71,7 @@ namespace CarPriceWebApi.Controllers
         [HttpGet("plot/removed_outliers")]
         public async Task<IActionResult> RemovedOutlierPlot(){
             
-            var url = "http://localhost:8000/plot/removed_outliers";
+            var url = "http://fastapi:8000/plot/removed_outliers";
             var response = await _httpClient.GetAsync(url);
 
             if(response.IsSuccessStatusCode){
@@ -84,7 +84,7 @@ namespace CarPriceWebApi.Controllers
         [HttpGet("plot/km")]
         public async Task<IActionResult> PlotKm(){
             
-            var url = "http://localhost:8000/plot/km";
+            var url = "http://fastapi:8000/plot/km";
             var response = await _httpClient.GetAsync(url);
 
             if(response.IsSuccessStatusCode){
@@ -97,7 +97,7 @@ namespace CarPriceWebApi.Controllers
         [HttpGet("plot/age")]
         public async Task<IActionResult> PlotAge(){
             
-            var url = "http://localhost:8000/plot/age";
+            var url = "http://fastapi:8000/plot/age";
             var response = await _httpClient.GetAsync(url);
 
             if(response.IsSuccessStatusCode){
@@ -110,7 +110,7 @@ namespace CarPriceWebApi.Controllers
         [HttpGet("plot/fuel")]
         public async Task<IActionResult> PlotFuel(){
             
-            var url = "http://localhost:8000/plot/fuel";
+            var url = "http://fastapi:8000/plot/fuel";
             var response = await _httpClient.GetAsync(url);
 
             if(response.IsSuccessStatusCode){

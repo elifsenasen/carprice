@@ -1,4 +1,4 @@
-<<<<<<< HEAD:fastapi/main.py
+import uvicorn
 from fastapi import FastAPI
 from pydantic import BaseModel
 import carpricepred
@@ -162,7 +162,7 @@ async def evaluate(model_name:str):
     
 if __name__ == "__main__":
     import uvicorn
-=======
+
 import logging
 from fastapi import FastAPI
 from pydantic import BaseModel
@@ -328,6 +328,4 @@ async def evaluate(model_name:str):
     return{"results": result_value}
     
 if __name__ == "__main__":
-    import uvicorn
->>>>>>> 3cf29467c4ab4ec40028e6dc73b0762f7c8154bc:main.py
     uvicorn.run(app, host="127.0.0.1", port=8000)
